@@ -1,0 +1,21 @@
+{
+    "files.autoSave": "afterDelay",
+    "editor.mouseWheelZoom": true,
+    "vscode-edge-devtools.webhint": false,
+    // "files.autoSave": "afterDelay",
+    "code-runner.saveFileBeforeRun": true,
+    // "workbench.colorTheme": "Palenight Operator",
+    "redhat.telemetry.enabled": true,
+    "vs-kubernetes": {
+        "vscode-kubernetes.helm-path-windows": "C:\\Users\\dell\\.vs-kubernetes\\tools\\helm\\windows-amd64\\helm.exe",
+        "vscode-kubernetes.kubectl-path-windows": "C:\\Users\\dell\\.vs-kubernetes\\tools\\kubectl\\kubectl.exe",
+        "vscode-kubernetes.minikube-path-windows": "C:\\Users\\dell\\.vs-kubernetes\\tools\\minikube\\windows-amd64\\minikube.exe"
+    },
+    "code-runner.clearPreviousOutput": true,
+    "window.zoomLevel": 1.3,
+    "php.validate.executablePath": "C:/xampp/php/php.exe",
+    "[python]": {
+        // "editor.defaultFormatter": "ms-python.autopep8"
+    },
+    "code-runner.runInTerminal": true,
+}
