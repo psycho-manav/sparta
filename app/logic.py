@@ -22,30 +22,47 @@ from db.database import Database
 from db.tables import *
 from app.auxiliary import *
 
+
 class Logic():
-    def __init__(self):    
-        #self.cwd = str(subprocess.check_output("echo $OLDPWD", shell=True)[:-1])+'/'
+    def __init__(self):
+        # self.cwd = str(subprocess.check_output("echo $OLDPWD", shell=True)[:-1])+'/'
         self.cwd = subprocess.getoutput("echo $OLDPWD")+'/'
-        
-        self.createTemporaryFiles()                                     # creates temporary files/folders used by SPARTA
-                                                                        # other variables initialised elsewhere: self.projectname, self.outputfolder, self.runningfolder, self.db, self.istemp
+
+        # creates temporary files/folders used by SPARTA
+        self.createTemporaryFiles()
+        # other variables initialised elsewhere: self.projectname, self.outputfolder, self.runningfolder, self.db, self.istemp
+
     def createTemporaryFiles(self):
         try:
             print('[+] Creating temporary files..')
-            
-            self.istemp = True                                          # indicates that file is temporary and can be deleted if user exits without saving
-                        
-            tf = tempfile.NamedTemporaryFile(suffix=".sprt",prefix="sparta-", delete=False)         # to store the database file
-            self.outputfolder = tempfile.mkdtemp(suffix="-tool-output",prefix="sparta-")            # to store tool output of finished processes
-            self.runningfolder = tempfile.mkdtemp(suffix="-running",prefix="sparta-")               # to store tool output of running processes
-            os.makedirs(self.outputfolder+'/screenshots')                                           # to store screenshots
-            os.makedirs(self.runningfolder+'/nmap')                                                 # to store nmap output
-            os.makedirs(self.runningfolder+'/hydra')                                                # to store hydra output         
-            self.usernamesWordlist = Wordlist(self.outputfolder + '/sparta-usernames.txt')          # to store found usernames
-            self.passwordsWordlist = Wordlist(self.outputfolder + '/sparta-passwords.txt')          # to store found passwords
+
+            # indicates that file is temporary and can be deleted if user exits without saving
+            self.istemp = True
+
+            # to store the database file
+            tf = tempfile.NamedTemporaryFile(
+                suffix=".sprt", prefix="sparta-", delete=False)
+            # to store tool output of finished processes
+            self.outputfolder = tempfile.mkdtemp(
+                suffix="-tool-output", prefix="sparta-")
+            # to store tool output of running processes
+            self.runningfolder = tempfile.mkdtemp(
+                suffix="-running", prefix="sparta-")
+            # to store screenshots
+            os.makedirs(self.outputfolder+'/screenshots')
+            # to store nmap output
+            os.makedirs(self.runningfolder+'/nmap')
+            # to store hydra output
+            os.makedirs(self.runningfolder+'/hydra')
+            # to store found usernames
+            self.usernamesWordlist = Wordlist(
+                self.outputfolder + '/sparta-usernames.txt')
+            # to store found passwords
+            self.passwordsWordlist = Wordlist(
+                self.outputfolder + '/sparta-passwords.txt')
             self.projectname = tf.name
             self.db = Database(self.projectname)
-            
+
         except:
             print('\t[-] Something went wrong creating the temporary files..')
             print("[-] Unexpected error:", sys.exc_info()[0])
@@ -58,20 +75,21 @@ class Logic():
                     print('[+] Removing wordlist files.')
                     os.remove(self.usernamesWordlist.filename)
                     os.remove(self.passwordsWordlist.filename)
-                
+
             else:
                 os.remove(self.projectname)
                 shutil.rmtree(self.outputfolder)
-            
+
             shutil.rmtree(self.runningfolder)
 
         except:
-            print('\t[-] Something went wrong removing temporary files and folders..')
+            print(
+                '\t[-] Something went wrong removing temporary files and folders..')
             print("[-] Unexpected error:", sys.exc_info()[0])
 
     def createFolderForTool(self, tool):
         if 'nmap' in tool:
-            tool = 'nmap'       
+            tool = 'nmap'
         path = self.runningfolder+'/'+re.sub("[^0-9a-zA-Z]", "", str(tool))
         if not os.path.exists(path):
             os.makedirs(path)
@@ -88,7 +106,7 @@ class Logic():
             path = self.outputfolder+'/'+str(tool)
             if not os.path.exists(str(path)):
                 os.makedirs(str(path))
-            
+
             # check if the outputFilename exists, if not try .xml and .txt extensions (different tools use different formats)
             if os.path.exists(str(outputFilename)) and os.path.isfile(str(outputFilename)):
                 shutil.move(str(outputFilename), str(path))
@@ -106,7 +124,7 @@ class Logic():
             elif os.path.exists(str(outputFilename)+'.xml') and os.path.isfile(str(outputFilename)+'.xml'):
                 shutil.move(str(outputFilename)+'.xml', str(path))
             elif os.path.exists(str(outputFilename)+'.txt') and os.path.isfile(str(outputFilename)+'.txt'):
-                shutil.move(str(outputFilename)+'.txt', str(path))                          
+                shutil.move(str(outputFilename)+'.txt', str(path))
         except:
             print('[-] Something went wrong moving the tool output file..')
             print("[-] Unexpected error:", sys.exc_info()[0])
@@ -118,33 +136,46 @@ class Logic():
             if not os.path.exists(str(path)):
                 os.makedirs(str(path))
 
-            shutil.copy(str(file), str(path))   # will overwrite if file already exists
+            # will overwrite if file already exists
+            shutil.copy(str(file), str(path))
         except:
-            print('[-] Something went wrong copying the imported XML to the project folder.')
+            print(
+                '[-] Something went wrong copying the imported XML to the project folder.')
             print("[-] Unexpected error:", sys.exc_info()[0])
 
     def openExistingProject(self, filename):
         try:
             print('[+] Opening project..')
-            self.istemp = False                                         # indicate the file is NOT temporary and should NOT be deleted later
-            
-            self.projectname = str(filename)                            # set the new projectname and outputfolder vars
-            if not str(filename).endswith('.sprt'):         
-                self.outputfolder = str(filename)+'-tool-output'        # use the same name as the file for the folder (without the extension)
+            # indicate the file is NOT temporary and should NOT be deleted later
+            self.istemp = False
+
+            # set the new projectname and outputfolder vars
+            self.projectname = str(filename)
+            if not str(filename).endswith('.sprt'):
+                # use the same name as the file for the folder (without the extension)
+                self.outputfolder = str(filename)+'-tool-output'
             else:
                 self.outputfolder = str(filename)[:-5]+'-tool-output'
 
-            self.usernamesWordlist = Wordlist(self.outputfolder + '/sparta-usernames.txt')          # to store found usernames
-            self.passwordsWordlist = Wordlist(self.outputfolder + '/sparta-passwords.txt')          # to store found passwords          
-            
-            self.runningfolder = tempfile.mkdtemp(suffix="-running",prefix="sparta-")               # to store tool output of running processes
-            self.db = Database(self.projectname)                        # use the new db
-            self.cwd = ntpath.dirname(str(self.projectname))+'/'        # update cwd so it appears nicely in the window title
-            
+            # to store found usernames
+            self.usernamesWordlist = Wordlist(
+                self.outputfolder + '/sparta-usernames.txt')
+            # to store found passwords
+            self.passwordsWordlist = Wordlist(
+                self.outputfolder + '/sparta-passwords.txt')
+
+            # to store tool output of running processes
+            self.runningfolder = tempfile.mkdtemp(
+                suffix="-running", prefix="sparta-")
+            # use the new db
+            self.db = Database(self.projectname)
+            # update cwd so it appears nicely in the window title
+            self.cwd = ntpath.dirname(str(self.projectname))+'/'
+
         except:
             print('\t[-] Something went wrong while opening the project..')
             print("[-] Unexpected error:", sys.exc_info()[0])
-        
+
     # this function copies the current project files and folder to a new location
     # if the replace flag is set to 1, it overwrites the destination file and folder
     def saveProjectAs(self, filename, replace=0):
@@ -162,21 +193,29 @@ class Logic():
 
             shutil.copyfile(self.projectname, str(filename))
             os.system('cp -r "'+self.outputfolder+'/." "'+str(foldername)+'"')
-            
-            if self.istemp:                                             # we can remove the temp file/folder if it was temporary
+
+            # we can remove the temp file/folder if it was temporary
+            if self.istemp:
                 print('[+] Removing temporary files and folders..')
                 os.remove(self.projectname)
                 shutil.rmtree(self.outputfolder)
 
-            self.db.openDB(str(filename))                               # inform the DB to use the new file
-            self.cwd = ntpath.dirname(str(filename))+'/'                # update cwd so it appears nicely in the window title
+            # inform the DB to use the new file
+            self.db.openDB(str(filename))
+            # update cwd so it appears nicely in the window title
+            self.cwd = ntpath.dirname(str(filename))+'/'
             self.projectname = str(filename)
             self.outputfolder = str(foldername)
 
-            self.usernamesWordlist = Wordlist(self.outputfolder + '/sparta-usernames.txt')          # to store found usernames
-            self.passwordsWordlist = Wordlist(self.outputfolder + '/sparta-passwords.txt')          # to store found passwords  
-            
-            self.istemp = False                                         # indicate that file is NOT temporary anymore and should NOT be deleted later
+            # to store found usernames
+            self.usernamesWordlist = Wordlist(
+                self.outputfolder + '/sparta-usernames.txt')
+            # to store found passwords
+            self.passwordsWordlist = Wordlist(
+                self.outputfolder + '/sparta-passwords.txt')
+
+            # indicate that file is NOT temporary anymore and should NOT be deleted later
+            self.istemp = False
             return True
 
         except:
@@ -184,9 +223,11 @@ class Logic():
             print("\t[-] Unexpected error:", sys.exc_info()[0])
             return False
 
-    def isHostInDB(self, host):                                         # used we don't run tools on hosts out of scope
+    # used we don't run tools on hosts out of scope
+    def isHostInDB(self, host):
         tmp_query = 'SELECT host.ip FROM nmap_host AS host WHERE host.ip == ? OR host.hostname == ?'
-        result = self.db.metadata.bind.execute(tmp_query, str(host), str(host)).fetchall()
+        result = self.db.metadata.bind.execute(
+            tmp_query, str(host), str(host)).fetchall()
         if result:
             return True
         return False
@@ -201,17 +242,19 @@ class Logic():
         if filters.checked == False:
             tmp_query += ' AND hosts.checked!=\'True\''
         for word in filters.keywords:
-            tmp_query += ' AND (hosts.ip LIKE \'%'+sanitise(word)+'%\' OR hosts.os_match LIKE \'%'+sanitise(word)+'%\' OR hosts.hostname LIKE \'%'+sanitise(word)+'%\')'
+            tmp_query += ' AND (hosts.ip LIKE \'%'+sanitise(word)+'%\' OR hosts.os_match LIKE \'%' + \
+                sanitise(word)+'%\' OR hosts.hostname LIKE \'%' + \
+                sanitise(word)+'%\')'
 
         return self.db.metadata.bind.execute(tmp_query).fetchall()
 
     # get distinct service names from DB
     def getServiceNamesFromDB(self, filters):
         tmp_query = ('SELECT DISTINCT service.name FROM nmap_service as service ' +
-                    'INNER JOIN nmap_port as ports ' +
-                    'INNER JOIN nmap_host AS hosts ' + 
-                    'ON hosts.id = ports.host_id AND service.id=ports.service_id WHERE 1=1')
-                    
+                     'INNER JOIN nmap_port as ports ' +
+                     'INNER JOIN nmap_host AS hosts ' +
+                     'ON hosts.id = ports.host_id AND service.id=ports.service_id WHERE 1=1')
+
         if filters.down == False:
             tmp_query += ' AND hosts.status!=\'down\''
         if filters.up == False:
@@ -219,7 +262,9 @@ class Logic():
         if filters.checked == False:
             tmp_query += ' AND hosts.checked!=\'True\''
         for word in filters.keywords:
-            tmp_query += ' AND (hosts.ip LIKE \'%'+sanitise(word)+'%\' OR hosts.os_match LIKE \'%'+sanitise(word)+'%\' OR hosts.hostname LIKE \'%'+sanitise(word)+'%\')'
+            tmp_query += ' AND (hosts.ip LIKE \'%'+sanitise(word)+'%\' OR hosts.os_match LIKE \'%' + \
+                sanitise(word)+'%\' OR hosts.hostname LIKE \'%' + \
+                sanitise(word)+'%\')'
         if filters.portopen == False:
             tmp_query += ' AND ports.state!=\'open\' AND ports.state!=\'open|filtered\''
         if filters.portclosed == False:
@@ -229,10 +274,10 @@ class Logic():
         if filters.tcp == False:
             tmp_query += ' AND ports.protocol!=\'tcp\''
         if filters.udp == False:
-            tmp_query += ' AND ports.protocol!=\'udp\''             
-                    
+            tmp_query += ' AND ports.protocol!=\'udp\''
+
         tmp_query += ' ORDER BY service.name ASC'
-                            
+
         return self.db.metadata.bind.execute(tmp_query).fetchall()
 
     # get notes for given host IP
@@ -242,23 +287,24 @@ class Logic():
     # get script info for given host IP
     def getScriptsFromDB(self, hostIP):
         tmp_query = ('SELECT host.id,host.script_id,port.port_id,port.protocol FROM nmap_script AS host ' +
-                    'INNER JOIN nmap_host AS hosts ON hosts.id = host.host_id ' +
-                    'LEFT OUTER JOIN nmap_port AS port ON port.id=host.port_id ' +
-                    'WHERE hosts.ip=?')
+                     'INNER JOIN nmap_host AS hosts ON hosts.id = host.host_id ' +
+                     'LEFT OUTER JOIN nmap_port AS port ON port.id=host.port_id ' +
+                     'WHERE hosts.ip=?')
 
         return self.db.metadata.bind.execute(tmp_query, str(hostIP)).fetchall()
-        
+
     def getScriptOutputFromDB(self, scriptDBId):
-        tmp_query = ('SELECT script.output FROM nmap_script as script WHERE script.id=?')
+        tmp_query = (
+            'SELECT script.output FROM nmap_script as script WHERE script.id=?')
         return self.db.metadata.bind.execute(tmp_query, str(scriptDBId)).fetchall()
 
     # get port and service info for given host IP
     def getPortsAndServicesForHostFromDB(self, hostIP, filters):
         tmp_query = ('SELECT hosts.ip,ports.port_id,ports.protocol,ports.state,ports.host_id,ports.service_id,services.name,services.product,services.version,services.extrainfo,services.fingerprint FROM nmap_port AS ports ' +
-            'INNER JOIN nmap_host AS hosts ON hosts.id = ports.host_id ' +
-            'LEFT OUTER JOIN nmap_service AS services ON services.id=ports.service_id ' +
-            'WHERE hosts.ip=?')
-        
+                     'INNER JOIN nmap_host AS hosts ON hosts.id = ports.host_id ' +
+                     'LEFT OUTER JOIN nmap_service AS services ON services.id=ports.service_id ' +
+                     'WHERE hosts.ip=?')
+
         if filters.portopen == False:
             tmp_query += ' AND ports.state!=\'open\' AND ports.state!=\'open|filtered\''
         if filters.portclosed == False:
@@ -275,47 +321,50 @@ class Logic():
     # used to check if there are any ports of a specific protocol for a given host
     def getPortsForHostFromDB(self, hostIP, protocol):
         tmp_query = ('SELECT ports.port_id FROM nmap_port AS ports ' +
-            'INNER JOIN nmap_host AS hosts ON hosts.id = ports.host_id ' +
-            'WHERE hosts.ip=? and ports.protocol=?')
-            
+                     'INNER JOIN nmap_host AS hosts ON hosts.id = ports.host_id ' +
+                     'WHERE hosts.ip=? and ports.protocol=?')
+
         return self.db.metadata.bind.execute(tmp_query, str(hostIP), str(protocol)).first()
 
     # used to get the service name given a host ip and a port when we are in tools tab (left) and right click on a host
     def getServiceNameForHostAndPort(self, hostIP, port):
         tmp_query = ('SELECT services.name FROM nmap_service AS services ' +
-            'INNER JOIN nmap_host AS hosts ON hosts.id = ports.host_id ' +
-            'INNER JOIN nmap_port AS ports ON services.id=ports.service_id ' +
-            'WHERE hosts.ip=? and ports.port_id=?')
-            
+                     'INNER JOIN nmap_host AS hosts ON hosts.id = ports.host_id ' +
+                     'INNER JOIN nmap_port AS ports ON services.id=ports.service_id ' +
+                     'WHERE hosts.ip=? and ports.port_id=?')
+
         return self.db.metadata.bind.execute(tmp_query, str(hostIP), str(port)).first()
-    
-    # used to delete all port/script data related to a host - to overwrite portscan info with the latest scan   
+
+    # used to delete all port/script data related to a host - to overwrite portscan info with the latest scan
     def deleteAllPortsAndScriptsForHostFromDB(self, hostID, protocol):
-        ports_for_host = self.db.session().query(nmap_port).filter(nmap_port.host_id == hostID, nmap_port.protocol == str(protocol)).all()
-                
+        ports_for_host = self.db.session().query(nmap_port).filter(
+            nmap_port.host_id == hostID, nmap_port.protocol == str(protocol)).all()
+
         for p in ports_for_host:
-            scripts_for_ports = self.db.session().query(nmap_script).filter(nmap_script.port_id == p.id).all()
+            scripts_for_ports = self.db.session().query(
+                nmap_script).filter(nmap_script.port_id == p.id).all()
             for s in scripts_for_ports:
                 self.db.session().delete(s)
-        
+
         for p in ports_for_host:
             self.db.session().delete(p)
-                    
+
         self.db.commit()
 
     def getHostInformation(self, hostIP):
         return self.db.session().query(nmap_host).filter_by(ip=str(hostIP)).first()
 
-    def getPortStatesForHost(self,hostID):
-        tmp_query = ('SELECT port.state FROM nmap_port as port WHERE port.host_id=?')
+    def getPortStatesForHost(self, hostID):
+        tmp_query = (
+            'SELECT port.state FROM nmap_port as port WHERE port.host_id=?')
         return self.db.metadata.bind.execute(tmp_query, str(hostID)).fetchall()
 
     def getHostsAndPortsForServiceFromDB(self, serviceName, filters):
-        
+
         tmp_query = ('SELECT hosts.ip,ports.port_id,ports.protocol,ports.state,ports.host_id,ports.service_id,services.name,services.product,services.version,services.extrainfo,services.fingerprint FROM nmap_port AS ports ' +
-            'INNER JOIN nmap_host AS hosts ON hosts.id = ports.host_id ' +
-            'LEFT OUTER JOIN nmap_service AS services ON services.id=ports.service_id ' +
-            'WHERE services.name=?')
+                     'INNER JOIN nmap_host AS hosts ON hosts.id = ports.host_id ' +
+                     'LEFT OUTER JOIN nmap_service AS services ON services.id=ports.service_id ' +
+                     'WHERE services.name=?')
 
         if filters.down == False:
             tmp_query += ' AND hosts.status!=\'down\''
@@ -332,9 +381,11 @@ class Logic():
         if filters.tcp == False:
             tmp_query += ' AND ports.protocol!=\'tcp\''
         if filters.udp == False:
-            tmp_query += ' AND ports.protocol!=\'udp\'' 
+            tmp_query += ' AND ports.protocol!=\'udp\''
         for word in filters.keywords:
-            tmp_query += ' AND (hosts.ip LIKE \'%'+sanitise(word)+'%\' OR hosts.os_match LIKE \'%'+sanitise(word)+'%\' OR hosts.hostname LIKE \'%'+sanitise(word)+'%\')'
+            tmp_query += ' AND (hosts.ip LIKE \'%'+sanitise(word)+'%\' OR hosts.os_match LIKE \'%' + \
+                sanitise(word)+'%\' OR hosts.hostname LIKE \'%' + \
+                sanitise(word)+'%\')'
 
         return self.db.metadata.bind.execute(tmp_query, str(serviceName)).fetchall()
 
@@ -342,19 +393,25 @@ class Logic():
     # the showProcesses flag is used to ensure we don't display processes in the process table after we have cleared them or when an existing project is opened.
     # to speed up the queries we replace the columns we don't need by zeros (the reason we need all the columns is we are using the same model to display process information everywhere)
     def getProcessesFromDB(self, filters, showProcesses=''):
-        if showProcesses == '':                                         # we do not fetch nmap processes because these are not displayed in the host tool tabs / tools
+        # we do not fetch nmap processes because these are not displayed in the host tool tabs / tools
+        if showProcesses == '':
             tmp_query = ('SELECT "0", "0", "0", process.name, "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0" FROM process AS process WHERE process.closed="False" AND process.name!="nmap" group by process.name')
             result = self.db.metadata.bind.execute(tmp_query).fetchall()
 
-        elif showProcesses == False:                                    # when opening a project, fetch only the processes that have display=false and were not in tabs that were closed by the user
+        # when opening a project, fetch only the processes that have display=false and were not in tabs that were closed by the user
+        elif showProcesses == False:
             tmp_query = ('SELECT process.id, process.hostip, process.tabtitle, process.outputfile, poutput.output FROM process AS process '
-            'INNER JOIN process_output AS poutput ON process.id = poutput.process_id '
-            'WHERE process.display=? AND process.closed="False" order by process.id desc')
-            result = self.db.metadata.bind.execute(tmp_query, str(showProcesses)).fetchall()
+                         'INNER JOIN process_output AS poutput ON process.id = poutput.process_id '
+                         'WHERE process.display=? AND process.closed="False" order by process.id desc')
+            result = self.db.metadata.bind.execute(
+                tmp_query, str(showProcesses)).fetchall()
 
-        else:                                                           # show all the processes in the (bottom) process table (no matter their closed value)
-            tmp_query = ('SELECT * FROM process AS process WHERE process.display=? order by id desc')
-            result = self.db.metadata.bind.execute(tmp_query, str(showProcesses)).fetchall()
+        # show all the processes in the (bottom) process table (no matter their closed value)
+        else:
+            tmp_query = (
+                'SELECT * FROM process AS process WHERE process.display=? order by id desc')
+            result = self.db.metadata.bind.execute(
+                tmp_query, str(showProcesses)).fetchall()
 
         return result
 
@@ -363,19 +420,21 @@ class Logic():
             tmp_query = ('SELECT "0", "0", "0", "0", "0", process.hostip, process.port, process.protocol, "0", "0", process.outputfile, "0", "0", "0" FROM process AS process WHERE process.name=?')
         else:
             tmp_query = ('SELECT process.id, "0", "0", "0", "0", process.hostip, process.port, process.protocol, "0", "0", process.outputfile, "0", "0", "0" FROM process AS process WHERE process.name=? and process.closed="False"')
-            
+
         return self.db.metadata.bind.execute(tmp_query, str(toolname)).fetchall()
 
     def getProcessStatusForDBId(self, dbid):
-        tmp_query = ('SELECT process.status FROM process AS process WHERE process.id=?')
+        tmp_query = (
+            'SELECT process.status FROM process AS process WHERE process.id=?')
         p = self.db.metadata.bind.execute(tmp_query, str(dbid)).fetchall()
         if p:
             return p[0][0]
         return -1
-        
+
     def getPidForProcess(self, procid):
-        tmp_query = ('SELECT process.pid FROM process AS process WHERE process.id=?')
-        p = self.db.metadata.bind.execute(tmp_query, str(procid)).fetchall()        
+        tmp_query = (
+            'SELECT process.pid FROM process AS process WHERE process.id=?')
+        p = self.db.metadata.bind.execute(tmp_query, str(procid)).fetchall()
         if p:
             return p[0][0]
         return -1
@@ -394,19 +453,21 @@ class Logic():
     # this function adds a new process to the DB
     def addProcessToDB(self, proc):
         print("[DEBUG] Adding process to DB: " + str(proc.name))
-        p = process(str(proc.pid()), str(proc.name), str(proc.tabtitle), str(proc.hostip), str(proc.port), str(proc.protocol), str(proc.command), proc.starttime, "", str(proc.outputfile), 'Waiting', [process_output()])
+        p = process(str(proc.pid()), str(proc.name), str(proc.tabtitle), str(proc.hostip), str(proc.port), str(
+            proc.protocol), str(proc.command), proc.starttime, "", str(proc.outputfile), 'Waiting', [process_output()])
         self.db.session().add(p)
         self.db.commit()
         proc.id = p.id
         return p.id
-    
+
     def addScreenshotToDB(self, ip, port, filename):
-        p = process("-2", "screenshooter", "screenshot ("+str(port)+"/tcp)", str(ip), str(port), "tcp", "", getTimestamp(True), getTimestamp(True), str(filename), "Finished", [process_output()])
+        p = process("-2", "screenshooter", "screenshot ("+str(port)+"/tcp)", str(ip), str(port), "tcp",
+                    "", getTimestamp(True), getTimestamp(True), str(filename), "Finished", [process_output()])
         self.db.session().add(p)
         self.db.commit()
         return p.id
-        
-    # is not actually a toggle function. it sets all the non-running processes display flag to false to ensure they aren't shown in the process table 
+
+    # is not actually a toggle function. it sets all the non-running processes display flag to false to ensure they aren't shown in the process table
     # but they need to be shown as tool tabs. this function is called when a user clears the processes or when a project is being closed.
     def toggleProcessDisplayStatus(self, resetAll=False):
         proc = self.db.session().query(process).filter_by(display='True').all()
@@ -421,7 +482,7 @@ class Logic():
                     p.display = 'False'
                     self.db.session().add(p)
         self.db.commit()
-        
+
     # this function updates the status of a process if it is killed
     def storeProcessKillStatusInDB(self, procId):
         proc = self.db.session().query(process).filter_by(id=procId).first()
@@ -438,7 +499,7 @@ class Logic():
             proc.endtime = getTimestamp(True)   # store end time
             self.db.session().add(proc)
             self.db.commit()
-            
+
     # this function updates the status of a process if it is killed
     def storeProcessCancelStatusInDB(self, procId):
         proc = self.db.session().query(process).filter_by(id=procId).first()
@@ -463,21 +524,24 @@ class Logic():
             proc.closed = 'True'
             self.db.session().add(proc)
             self.db.commit()
-    
+
     # this function stores a finished process' output to the DB and updates it status
     def storeProcessOutputInDB(self, procId, output):
         proc = self.db.session().query(process).filter_by(id=procId).first()
         if proc:
-            proc_output = self.db.session().query(process_output).filter_by(process_id=procId).first()
+            proc_output = self.db.session().query(
+                process_output).filter_by(process_id=procId).first()
             if proc_output:
-                proc_output.output=str(output)
+                proc_output.output = str(output)
                 self.db.session().add(proc_output)
 
             proc.endtime = getTimestamp(True)   # store end time
 
-            if proc.status == "Killed" or proc.status == "Cancelled" or proc.status == "Crashed":   # if the process has been killed don't change the status to "Finished"
-                self.db.commit()                                        # new: this was missing but maybe this is important here to ensure that we save the process output no matter what
-                return True                         
+            # if the process has been killed don't change the status to "Finished"
+            if proc.status == "Killed" or proc.status == "Cancelled" or proc.status == "Crashed":
+                # new: this was missing but maybe this is important here to ensure that we save the process output no matter what
+                self.db.commit()
+                return True
             else:
                 proc.status = 'Finished'
                 self.db.session().add(proc)
@@ -485,34 +549,40 @@ class Logic():
 
     def storeNotesInDB(self, hostId, notes):
         db_note = self.getNoteFromDB(hostId)
-                
+
         if db_note is not None:
             db_note.text = str(notes)
-        
+
         else:
             db_note = note(int(hostId), str(notes))
-        
+
         self.db.session().add(db_note)
         self.db.commit()
-        
+
     def isKilledProcess(self, procId):
-        tmp_query = ('SELECT process.status FROM process AS process WHERE process.id=?')
+        tmp_query = (
+            'SELECT process.status FROM process AS process WHERE process.id=?')
         proc = self.db.metadata.bind.execute(tmp_query, str(procId)).fetchall()
         if not proc or str(proc[0][0]) == "Killed":
             return True
         return False
-        
+
     def isCanceledProcess(self, procId):
-        tmp_query = ('SELECT process.status FROM process AS process WHERE process.id=?')
+        tmp_query = (
+            'SELECT process.status FROM process AS process WHERE process.id=?')
         proc = self.db.metadata.bind.execute(tmp_query, str(procId)).fetchall()
         if not proc or str(proc[0][0]) == "Cancelled":
             return True
         return False
-        
+
+
 class NmapImporter(QtCore.QThread):
-    tick = QtCore.pyqtSignal(int, name="changed")                       # New style signal
-    done = QtCore.pyqtSignal(name="done")                               # New style signal
-    schedule = QtCore.pyqtSignal(object, bool, name="schedule")         # New style signal
+    # New style signal
+    tick = QtCore.pyqtSignal(int, name="changed")
+    # New style signal
+    done = QtCore.pyqtSignal(name="done")
+    schedule = QtCore.pyqtSignal(
+        object, bool, name="schedule")         # New style signal
 
     def __init__(self):
         QtCore.QThread.__init__(self, parent=None)
@@ -523,61 +593,70 @@ class NmapImporter(QtCore.QThread):
 
     def setFilename(self, filename):
         self.filename = filename
-        
+
     def setOutput(self, output):
         self.output = output
 
-    def run(self):                                                      # it is necessary to get the qprocess because we need to send it back to the scheduler when we're done importing
+    # it is necessary to get the qprocess because we need to send it back to the scheduler when we're done importing
+    def run(self):
         try:
             print("[+] Parsing nmap xml file: " + self.filename)
             starttime = time.time()
-            
+
             try:
                 parser = Parser(self.filename)
-            
+
             except:
                 print('\t[-] Giving up on import due to previous errors.')
                 print("\t[-] Unexpected error:", sys.exc_info()[0])
                 self.done.emit()
                 return
-                
-            self.db.dbsemaphore.acquire()                               # ensure that while this thread is running, no one else can write to the DB
+
+            # ensure that while this thread is running, no one else can write to the DB
+            self.db.dbsemaphore.acquire()
             s = parser.get_session()                                    # nmap session info
             if s:
-                n = nmap_session(self.filename, s.start_time, s.finish_time, s.nmap_version, s.scan_args, s.total_hosts, s.up_hosts, s.down_hosts)
+                n = nmap_session(self.filename, s.start_time, s.finish_time,
+                                 s.nmap_version, s.scan_args, s.total_hosts, s.up_hosts, s.down_hosts)
                 self.db.session().add(n)
 
             hostCount = len(parser.all_hosts())
 
-            if hostCount==0:                                            # to fix a division by zero if we ran nmap on one host
-                hostCount=1
+            # to fix a division by zero if we ran nmap on one host
+            if hostCount == 0:
+                hostCount = 1
 
             progress = 100.0 / hostCount
             totalprogress = 0
             self.tick.emit(int(totalprogress))
-    
+
             for h in parser.all_hosts():                                # create all the hosts that need to be created
                 db_host = self.db.session().query(nmap_host).filter_by(ip=h.ip).first()
-                
+
                 if not db_host:                                         # if host doesn't exist in DB, create it first
-                    hid = nmap_host('', '', h.ip, h.ipv4, h.ipv6, h.macaddr, h.status, h.hostname, h.vendor, h.uptime, h.lastboot, h.distance, h.state, h.count)
+                    hid = nmap_host('', '', h.ip, h.ipv4, h.ipv6, h.macaddr, h.status, h.hostname,
+                                    h.vendor, h.uptime, h.lastboot, h.distance, h.state, h.count)
                     self.db.session().add(hid)
                     host_note = note(hid.id, '')
                     self.db.session().add(host_note)
-                    
 
             self.db.session().commit()
-            
-            for h in parser.all_hosts():                                # create all OS, service and port objects that need to be created
 
-                db_host = self.db.session().query(nmap_host).filter_by(ip=h.ip).first() # fetch the host
-                
-                os_nodes = h.get_OS()                                   # parse and store all the OS nodes
+            # create all OS, service and port objects that need to be created
+            for h in parser.all_hosts():
+
+                db_host = self.db.session().query(nmap_host).filter_by(
+                    ip=h.ip).first()  # fetch the host
+
+                # parse and store all the OS nodes
+                os_nodes = h.get_OS()
                 for os in os_nodes:
-                    db_os = self.db.session().query(nmap_os).filter_by(host_id=db_host.id).filter_by(name=os.name).filter_by(family=os.family).filter_by(generation=os.generation).filter_by(os_type=os.os_type).filter_by(vendor=os.vendor).first()
-                    
+                    db_os = self.db.session().query(nmap_os).filter_by(host_id=db_host.id).filter_by(name=os.name).filter_by(
+                        family=os.family).filter_by(generation=os.generation).filter_by(os_type=os.os_type).filter_by(vendor=os.vendor).first()
+
                     if not db_os:
-                        host_os = nmap_os(os.name, os.family, os.generation, os.os_type, os.vendor, os.accuracy, db_host.id)
+                        host_os = nmap_os(
+                            os.name, os.family, os.generation, os.os_type, os.vendor, os.accuracy, db_host.id)
                         self.db.session().add(host_os)
 
                 self.db.session().commit()
@@ -585,57 +664,70 @@ class NmapImporter(QtCore.QThread):
                 for p in h.all_ports():                                 # parse the ports
                     s = p.get_service()
 
-                    if not (s is None):                                 # check if service already exists to avoid adding duplicates
-                        db_service = self.db.session().query(nmap_service).filter_by(name=s.name).filter_by(product=s.product).filter_by(version=s.version).filter_by(extrainfo=s.extrainfo).filter_by(fingerprint=s.fingerprint).first()
-                        
+                    # check if service already exists to avoid adding duplicates
+                    if not (s is None):
+                        db_service = self.db.session().query(nmap_service).filter_by(name=s.name).filter_by(product=s.product).filter_by(
+                            version=s.version).filter_by(extrainfo=s.extrainfo).filter_by(fingerprint=s.fingerprint).first()
+
                         if not db_service:
-                            db_service = nmap_service(s.name, s.product, s.version, s.extrainfo, s.fingerprint)
+                            db_service = nmap_service(
+                                s.name, s.product, s.version, s.extrainfo, s.fingerprint)
                             self.db.session().add(db_service)
 
                     else:                                               # else, there is no service info to parse
-                        db_service = None                   
-                                                                        # fetch the port
-                    db_port = self.db.session().query(nmap_port).filter_by(host_id=db_host.id).filter_by(port_id=p.portId).filter_by(protocol=p.protocol).first()
-                    
-                    if not db_port:     
+                        db_service = None
+                        # fetch the port
+                    db_port = self.db.session().query(nmap_port).filter_by(host_id=db_host.id).filter_by(
+                        port_id=p.portId).filter_by(protocol=p.protocol).first()
+
+                    if not db_port:
                         if db_service:
-                            db_port = nmap_port(p.portId, p.protocol, p.state, db_host.id, db_service.id)
+                            db_port = nmap_port(
+                                p.portId, p.protocol, p.state, db_host.id, db_service.id)
                         else:
-                            db_port = nmap_port(p.portId, p.protocol, p.state, db_host.id, '')
+                            db_port = nmap_port(
+                                p.portId, p.protocol, p.state, db_host.id, '')
 
                         self.db.session().add(db_port)
 
             self.db.session().commit()
-            
+
             totalprogress += progress
             self.tick.emit(int(totalprogress))
 
-            for h in parser.all_hosts():                                # create all script objects that need to be created
-                
+            # create all script objects that need to be created
+            for h in parser.all_hosts():
+
                 db_host = self.db.session().query(nmap_host).filter_by(ip=h.ip).first()
-                
+
                 for p in h.all_ports():
                     for scr in p.get_scripts():
-                                                
-                        db_port = self.db.session().query(nmap_port).filter_by(host_id=db_host.id).filter_by(port_id=p.portId).filter_by(protocol=p.protocol).first()
-                        db_script = self.db.session().query(nmap_script).filter_by(script_id=scr.scriptId).filter_by(port_id=db_port.id).first()
+
+                        db_port = self.db.session().query(nmap_port).filter_by(host_id=db_host.id).filter_by(
+                            port_id=p.portId).filter_by(protocol=p.protocol).first()
+                        db_script = self.db.session().query(nmap_script).filter_by(
+                            script_id=scr.scriptId).filter_by(port_id=db_port.id).first()
 
                         if not db_script:                               # if this script object doesn't exist, create it
-                            port_script = nmap_script(scr.scriptId, scr.output, db_port.id, db_host.id)
+                            port_script = nmap_script(
+                                scr.scriptId, scr.output, db_port.id, db_host.id)
                             self.db.session().add(port_script)
-                    
+
                 for hs in h.get_hostscripts():
-                    db_script = self.db.session().query(nmap_script).filter_by(script_id=hs.scriptId).filter_by(host_id=db_host.id).first()
+                    db_script = self.db.session().query(nmap_script).filter_by(
+                        script_id=hs.scriptId).filter_by(host_id=db_host.id).first()
                     if not db_script:
-                        port_script = nmap_script(hs.scriptId, hs.output, None, db_host.id)
+                        port_script = nmap_script(
+                            hs.scriptId, hs.output, None, db_host.id)
                         self.db.session().add(port_script)
-                    
+
             self.db.session().commit()
-                    
+
             for h in parser.all_hosts():                                # update everything
 
-                db_host = self.db.session().query(nmap_host).filter_by(ip=h.ip).first() # get host from DB (if any with the same IP address)
-                
+                # get host from DB (if any with the same IP address)
+                db_host = self.db.session().query(nmap_host).filter_by(ip=h.ip).first()
+
                 if db_host.ipv4 == '' and not h.ipv4 == '':
                     db_host.ipv4 = h.ipv4
                 if db_host.ipv6 == '' and not h.ipv6 == '':
@@ -660,60 +752,72 @@ class NmapImporter(QtCore.QThread):
                     db_host.count = h.count
 
                 self.db.session().add(db_host)
-                        
+
                 tmp_name = ''
-                tmp_accuracy = '0'                                      # TODO: check if better to convert to int for comparison
-                
+                # TODO: check if better to convert to int for comparison
+                tmp_accuracy = '0'
+
                 os_nodes = h.get_OS()
                 for os in os_nodes:
-                    db_os = self.db.session().query(nmap_os).filter_by(host_id=db_host.id).filter_by(name=os.name).filter_by(family=os.family).filter_by(generation=os.generation).filter_by(os_type=os.os_type).filter_by(vendor=os.vendor).first()
-                    
+                    db_os = self.db.session().query(nmap_os).filter_by(host_id=db_host.id).filter_by(name=os.name).filter_by(
+                        family=os.family).filter_by(generation=os.generation).filter_by(os_type=os.os_type).filter_by(vendor=os.vendor).first()
+
                     db_os.os_accuracy = os.accuracy                     # update the accuracy
-                            
-                    if not os.name == '':                               # get the most accurate OS match/accuracy to store it in the host table for easier access
+
+                    # get the most accurate OS match/accuracy to store it in the host table for easier access
+                    if not os.name == '':
                         if os.accuracy > tmp_accuracy:
                             tmp_name = os.name
                             tmp_accuracy = os.accuracy
 
                 if os_nodes:                                            # if there was operating system info to parse
-                    
-                    if not tmp_name == '' and not tmp_accuracy == '0':  # update the current host with the most accurate OS match
+
+                    # update the current host with the most accurate OS match
+                    if not tmp_name == '' and not tmp_accuracy == '0':
                         db_host.os_match = tmp_name
                         db_host.os_accuracy = tmp_accuracy
                         self.db.session().add(db_host)
 
-                for p in h.all_ports():     
+                for p in h.all_ports():
                     s = p.get_service()
                     if not (s is None):
-                                                                        # fetch the service for this port
-                        db_service = self.db.session().query(nmap_service).filter_by(name=s.name).filter_by(product=s.product).filter_by(version=s.version).filter_by(extrainfo=s.extrainfo).filter_by(fingerprint=s.fingerprint).first()
+                        # fetch the service for this port
+                        db_service = self.db.session().query(nmap_service).filter_by(name=s.name).filter_by(product=s.product).filter_by(
+                            version=s.version).filter_by(extrainfo=s.extrainfo).filter_by(fingerprint=s.fingerprint).first()
                     else:
-                        db_service = None                       
-                                                                        # fetch the port
-                    db_port = self.db.session().query(nmap_port).filter_by(host_id=db_host.id).filter_by(port_id=p.portId).filter_by(protocol=p.protocol).first()                   
+                        db_service = None
+                        # fetch the port
+                    db_port = self.db.session().query(nmap_port).filter_by(host_id=db_host.id).filter_by(
+                        port_id=p.portId).filter_by(protocol=p.protocol).first()
                     db_port.state = p.state
                     self.db.session().add(db_port)
-                    
-                    if not (db_service is None):                        # if there is some new service information, update it
+
+                    # if there is some new service information, update it
+                    if not (db_service is None):
                         db_port.service_id = db_service.id
                         self.db.session().add(db_port)
-                
-                    for scr in p.get_scripts():                         # store the script results (note that existing script outputs are also kept)    
-                        db_script = self.db.session().query(nmap_script).filter_by(script_id=scr.scriptId).filter_by(port_id=db_port.id).first()
+
+                    # store the script results (note that existing script outputs are also kept)
+                    for scr in p.get_scripts():
+                        db_script = self.db.session().query(nmap_script).filter_by(
+                            script_id=scr.scriptId).filter_by(port_id=db_port.id).first()
 
                         if not scr.output == '':
                             db_script.output = scr.output
                             self.db.session().add(db_script)
-                
+
                 totalprogress += progress
-                self.tick.emit(int(totalprogress))      
+                self.tick.emit(int(totalprogress))
 
             self.db.session().commit()
-            self.db.dbsemaphore.release()                               # we are done with the DB
-            print('\t[+] Finished in '+ str(time.time()-starttime) + ' seconds.')
+            # we are done with the DB
+            self.db.dbsemaphore.release()
+            print('\t[+] Finished in ' +
+                  str(time.time()-starttime) + ' seconds.')
             self.done.emit()
-            self.schedule.emit(parser, self.output == '')               # call the scheduler (if there is no terminal output it means we imported nmap)
-            
+            # call the scheduler (if there is no terminal output it means we imported nmap)
+            self.schedule.emit(parser, self.output == '')
+
         except Exception as e:
             print('\t[-] Something went wrong when parsing the nmap file..')
             print("\t[-] Unexpected error:", sys.exc_info()[0])

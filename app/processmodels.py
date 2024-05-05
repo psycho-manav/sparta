@@ -15,17 +15,18 @@ import re
 from PyQt5 import QtGui, QtCore
 from app.auxiliary import sortArrayWithArray, IP2Int
 
+
 class ProcessesTableModel(QtCore.QAbstractTableModel):
-    
-    def __init__(self, controller, processes = [[]], headers = [], parent = None):
+
+    def __init__(self, controller, processes=[[]], headers=[], parent=None):
         QtCore.QAbstractTableModel.__init__(self, parent)
         self.__headers = headers
         self.__processes = processes
         self.__controller = controller
-        
+
     def setProcesses(self, processes):
         self.__processes = processes
-        
+
     def getProcesses(self):
         return self.__processes
 
@@ -39,22 +40,23 @@ class ProcessesTableModel(QtCore.QAbstractTableModel):
 
     def headerData(self, section, orientation, role):
         if role == QtCore.Qt.DisplayRole:
-            
+
             if orientation == QtCore.Qt.Horizontal:
-                
+
                 if section < len(self.__headers):
                     return self.__headers[section]
                 else:
                     return "not implemented"
 
-    def data(self, index, role):                                        # this method takes care of how the information is displayed
-        if role == QtCore.Qt.DisplayRole:                               # how to display each cell      
+    # this method takes care of how the information is displayed
+    def data(self, index, role):
+        if role == QtCore.Qt.DisplayRole:                               # how to display each cell
             value = ''
             row = index.row()
             column = index.column()
 
             if column == 1:
-                value = self.__processes[row]['display']        
+                value = self.__processes[row]['display']
             elif column == 2:
                 value = self.__processes[row]['pid']
             elif column == 3:
@@ -68,7 +70,8 @@ class ProcessesTableModel(QtCore.QAbstractTableModel):
                 value = self.__processes[row]['hostip']
             elif column == 6:
                 if not self.__processes[row]['port'] == '' and not self.__processes[row]['protocol'] == '':
-                    value = self.__processes[row]['port'] + '/' + self.__processes[row]['protocol']
+                    value = self.__processes[row]['port'] + \
+                        '/' + self.__processes[row]['protocol']
                 else:
                     value = self.__processes[row]['port']
             elif column == 7:
@@ -80,42 +83,42 @@ class ProcessesTableModel(QtCore.QAbstractTableModel):
             elif column == 10:
                 value = self.__processes[row]['endtime']
             elif column == 11:
-                value = self.__processes[row]['outputfile'] 
-            elif column == 12:  
+                value = self.__processes[row]['outputfile']
+            elif column == 12:
                 value = self.__processes[row]['output']
             elif column == 13:
                 value = self.__processes[row]['status']
             elif column == 14:
-                value = self.__processes[row]['closed']             
-            return value            
+                value = self.__processes[row]['closed']
+            return value
 
     def sort(self, Ncol, order):
         self.layoutAboutToBeChanged.emit()
-        array=[]
+        array = []
 
-        if Ncol == 3:            
+        if Ncol == 3:
             for i in range(len(self.__processes)):
                 array.append(self.__processes[i]['name'])
-        
-        elif Ncol == 4:            
+
+        elif Ncol == 4:
             for i in range(len(self.__processes)):
                 array.append(self.__processes[i]['tabtitle'])
-                
+
         elif Ncol == 5:
             for i in range(len(self.__processes)):
                 array.append(IP2Int(self.__processes[i]['hostip']))
-                
+
         elif Ncol == 6:
             for i in range(len(self.__processes)):
                 if self.__processes[i]['port'] == '':
                     return
                 else:
                     array.append(int(self.__processes[i]['port']))
-                
+
         elif Ncol == 9:
             for i in range(len(self.__processes)):
                 array.append(self.__processes[i]['starttime'])
-        
+
         elif Ncol == 10:
             for i in range(len(self.__processes)):
                 array.append(self.__processes[i]['endtime'])
@@ -123,28 +126,31 @@ class ProcessesTableModel(QtCore.QAbstractTableModel):
         else:
             for i in range(len(self.__processes)):
                 array.append(self.__processes[i]['status'])
-        
-        sortArrayWithArray(array, self.__processes)                     # sort the services based on the values in the array
+
+        # sort the services based on the values in the array
+        sortArrayWithArray(array, self.__processes)
 
         if order == QtCore.Qt.AscendingOrder:                                  # reverse if needed
             self.__processes.reverse()
 
-        self.__controller.updateProcessesIcon()                         # to make sure the progress GIF is displayed in the right place
-            
+        # to make sure the progress GIF is displayed in the right place
+        self.__controller.updateProcessesIcon()
+
         self.layoutChanged.emit()
 
-    def flags(self, index):                                             # method that allows views to know how to treat each item, eg: if it should be enabled, editable, selectable etc
+    # method that allows views to know how to treat each item, eg: if it should be enabled, editable, selectable etc
+    def flags(self, index):
         return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
     ### getter functions ###
 
     def getProcessPidForRow(self, row):
         return self.__processes[row]['pid']
-        
+
     def getProcessPidForId(self, dbId):
         for i in range(len(self.__processes)):
             if str(self.__processes[i]['id']) == str(dbId):
-                return self.__processes[i]['pid']   
+                return self.__processes[i]['pid']
 
     def getProcessStatusForRow(self, row):
         return self.__processes[row]['status']
@@ -153,7 +159,7 @@ class ProcessesTableModel(QtCore.QAbstractTableModel):
         for i in range(len(self.__processes)):
             if str(self.__processes[i]['pid']) == str(pid):
                 return self.__processes[i]['status']
-                
+
     def getProcessStatusForId(self, dbId):
         for i in range(len(self.__processes)):
             if str(self.__processes[i]['id']) == str(dbId):
@@ -161,15 +167,15 @@ class ProcessesTableModel(QtCore.QAbstractTableModel):
 
     def getProcessIdForRow(self, row):
         return self.__processes[row]['id']
-        
+
     def getProcessIdForPid(self, pid):
         for i in range(len(self.__processes)):
             if str(self.__processes[i]['pid']) == str(pid):
                 return self.__processes[i]['id']
-                
+
     def getToolNameForRow(self, row):
         return self.__processes[row]['name']
-        
+
     def getRowForToolName(self, toolname):
         for i in range(len(self.__processes)):
             if self.__processes[i]['name'] == toolname:
@@ -188,12 +194,12 @@ class ProcessesTableModel(QtCore.QAbstractTableModel):
 
     def getProtocolForRow(self, row):
         return self.__processes[row]['protocol']
-        
+
     def getOutputForRow(self, row):
         return self.__processes[row]['output']
-        
+
     def getOutputfileForRow(self, row):
-        return self.__processes[row]['outputfile']      
-    
+        return self.__processes[row]['outputfile']
+
     def getDisplayForRow(self, row):
         return self.__processes[row]['display']

@@ -37,6 +37,7 @@ Notes:
 '''
 
 
+from math import e
 import socket
 import sys
 
@@ -48,26 +49,28 @@ from struct import pack
 from threading import Thread
 from traceback import format_exc
 
+from scripts.snmpbrute import get_input
+
 try:
     from impacket import smb
     from impacket import uuid
     from impacket.dcerpc.v5 import dcerpc
     from impacket.dcerpc.v5 import transport
-except ImportError, _:
-    print 'ERROR: this tool requires python-impacket library to be installed, get it '
-    print 'from http://oss.coresecurity.com/projects/impacket.html or apt-get install python-impacket'
+except ImportError:
+    print('ERROR: this tool requires python-impacket library to be installed, get it ')
+    print('from http://oss.coresecurity.com/projects/impacket.html or apt-get install python-impacket')
     sys.exit(1)
 
 try:
     from ndr import *
-except ImportError, _:
-    print 'ERROR: this tool requires python-pymsrpc library to be installed, get it '
-    print 'from http://code.google.com/p/pymsrpc/'
+except ImportError:
+    print('ERROR: this tool requires python-pymsrpc library to be installed, get it ')
+    print('from http://code.google.com/p/pymsrpc/')
     sys.exit(1)
 
 
 CMDLINE = False
-SILENT  = False
+SILENT = False
 
 
 class connectionException(Exception):
@@ -78,10 +81,9 @@ class MS08_067(Thread):
     def __init__(self, target, port=445):
         super(MS08_067, self).__init__()
 
-        self.__port   = port
-        self.target   = target
-        self.status   = 'unknown'
-
+        self.__port = port
+        self.target = target
+        self.status = 'unknown'
 
     def __checkPort(self):
         '''
@@ -94,12 +96,11 @@ class MS08_067(Thread):
             s.connect((self.target, self.__port))
             s.close()
 
-        except socket.timeout, _:
+        except socket.timeout:
             raise connectionException, 'connection timeout'
 
-        except socket.error, _:
+        except socket.error:
             raise connectionException, 'connection refused'
-
 
     def __connect(self):
         '''
@@ -108,16 +109,16 @@ class MS08_067(Thread):
         '''
 
         try:
-            self.__trans = transport.DCERPCTransportFactory('ncacn_np:%s[\\pipe\\browser]' % self.target)
+            self.__trans = transport.DCERPCTransportFactory(
+                'ncacn_np:%s[\\pipe\\browser]' % self.target)
             self.__trans.connect()
 
-        except smb.SessionError, _:
+        except smb.SessionError:
             raise connectionException, 'access denied (RestrictAnonymous is probably set to 2)'
 
         except:
-            #raise Exception, 'unhandled exception (%s)' % format_exc()
+            # raise Exception, 'unhandled exception (%s)' % format_exc()
             raise connectionException, 'unexpected exception'
-
 
     def __bind(self):
         '''
@@ -128,15 +129,15 @@ class MS08_067(Thread):
         try:
             self.__dce = self.__trans.DCERPC_class(self.__trans)
 
-            self.__dce.bind(uuid.uuidtup_to_bin(('4b324fc8-1670-01d3-1278-5a47bf6ee188', '3.0')))
+            self.__dce.bind(uuid.uuidtup_to_bin(
+                ('4b324fc8-1670-01d3-1278-5a47bf6ee188', '3.0')))
 
-        except socket.error, _:
+        except socket.error:
             raise connectionException, 'unable to bind to SRVSVC endpoint'
 
         except:
-            #raise Exception, 'unhandled exception (%s)' % format_exc()
+            # raise Exception, 'unhandled exception (%s)' % format_exc()
             raise connectionException, 'unexpected exception'
-
 
     def __forgePacket(self):
         '''
@@ -153,14 +154,15 @@ class MS08_067(Thread):
         );
         '''
 
-        self.__path = ''.join([choice(letters) for _ in xrange(0, 3)])
+        self.__path = ''.join([choice(letters) for _ in range(0, 3)])
 
-        self.__request  = ndr_unique(pointer_value=0x00020000, data=ndr_wstring(data='')).serialize()
-        self.__request += ndr_wstring(data='\\%s\\..\\%s' % ('A'*5, self.__path)).serialize()
+        self.__request = ndr_unique(
+            pointer_value=0x00020000, data=ndr_wstring(data='')).serialize()
+        self.__request += ndr_wstring(data='\\%s\\..\\%s' %
+                                      ('A'*5, self.__path)).serialize()
         self.__request += ndr_wstring(data='\\%s' % self.__path).serialize()
         self.__request += ndr_long(data=1).serialize()
         self.__request += ndr_long(data=0).serialize()
-
 
     def __compare(self):
         '''
@@ -179,20 +181,18 @@ class MS08_067(Thread):
 
         self.result()
 
-
     def result(self):
         if CMDLINE == True and self.status in ('VULNERABLE', 'not vulnerable'):
-           print '%s: %s' % (self.target, self.status)
+            print('%s: %s' % (self.target, self.status))
         elif CMDLINE == True and SILENT != True:
-           print '%s: %s' % (self.target, self.status)
-
+            print('%s: %s' % (self.target, self.status))
 
     def run(self):
         try:
             self.__checkPort()
             self.__connect()
             self.__bind()
-        except connectionException, e:
+        except connectionException:
             self.status = e
             self.result()
             return None
@@ -210,43 +210,46 @@ if __name__ == '__main__':
     CMDLINE = True
 
     usage = '%s [option] {-t <target>|-l <iplist.txt>}' % sys.argv[0]
-    parser  = OptionParser(usage=usage, version='0.4')
+    parser = OptionParser(usage=usage, version='0.4')
     targets = set()
 
     # Create command line options
     try:
-        parser.add_option('-d', dest='descr', action='store_true', help='show description and exit')
+        parser.add_option('-d', dest='descr', action='store_true',
+                          help='show description and exit')
 
         parser.add_option('-t', dest='target', help='target IP or hostname')
 
-        parser.add_option('-l', dest='list', help='text file with list of targets')
+        parser.add_option('-l', dest='list',
+                          help='text file with list of targets')
 
-        parser.add_option('-s', dest='silent', action='store_true', help='be silent')
+        parser.add_option('-s', dest='silent',
+                          action='store_true', help='be silent')
 
         (args, _) = parser.parse_args()
 
         if not args.descr and not args.target and not args.list:
-            print usage
+            print(usage)
             sys.exit(1)
 
-    except (OptionError, TypeError), e:
+    except (OptionError, TypeError):
         parser.error(e)
 
-    descr  = args.descr
+    descr = args.descr
     target = args.target
-    tList  = args.list
+    tList = args.list
 
     SILENT = args.silent
 
     if descr:
-        print __doc__
+        print(__doc__)
         sys.exit(0)
 
     if tList:
         try:
             fd = open(tList, 'r')
         except IOError:
-            print 'ERROR: unable to read targets list file \'%s\'' % tList
+            print('ERROR: unable to read targets list file \'%s\'' % tList)
             sys.exit(1)
 
         for line in fd.readlines():
@@ -256,22 +259,22 @@ if __name__ == '__main__':
         targets.add(target)
 
     if not targets:
-        print 'ERROR: no targets specified'
+        print('ERROR: no targets specified')
         sys.exit(1)
 
     targets = list(targets)
     targets.sort()
 
     if not SILENT:
-        print
-        print '***********************************************************************'
-        print '* On Windows XP SP2 and SP3 this check might lead to a race condition *'
-        print '* and heap corruption in the svchost.exe process, but it may not      *'
-        print '* crash the service immediately, it can trigger later on inside any   *'
-        print '* of the shared services in the process.                              *'
-        print '***********************************************************************'
-        print
-        answer = raw_input('Do you want to continue? [Y/n] ')
+        print("\n")
+        print('***********************************************************************')
+        print('* On Windows XP SP2 and SP3 this check might lead to a race condition *')
+        print('* and heap corruption in the svchost.exe process, but it may not      *')
+        print('* crash the service immediately, it can trigger later on inside any   *')
+        print('* of the shared services in the process.                              *')
+        print('***********************************************************************')
+        print("\n")
+        answer = get_input('Do you want to continue? [Y/n] ')
 
         if answer and answer[0].lower() != 'y':
             sys.exit(1)

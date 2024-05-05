@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
-__author__ =  'ketchup'
-__version__=  '0.1'
+__author__ = 'ketchup'
+__version__ = '0.1'
 __modified_by = 'ketchup'
+
 
 class OS:
     name = ''
@@ -12,7 +13,7 @@ class OS:
     vendor = ''
     accuracy = 0
 
-    def __init__( self, OSNode ):
+    def __init__(self, OSNode):
         if not (OSNode is None):
             self.name = OSNode.getAttribute('name')
             self.family = OSNode.getAttribute('osfamily')

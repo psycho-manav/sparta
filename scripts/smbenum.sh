@@ -4,20 +4,19 @@
 
 IFACE="eth0"
 
-if [ $# -eq 0 ]
-	then
-		echo "Usage: $0 <IP>"
-		echo "eg: $0 10.10.10.10"
-		exit
-	else
-		IP="$1"
+if [ $# -eq 0 ]; then
+	echo "Usage: $0 <IP>"
+	echo "eg: $0 10.10.10.10"
+	exit
+else
+	IP="$1"
 fi
 
 echo -e "\n########## Getting Netbios name ##########"
 nbtscan -v -h $IP
 
 echo -e "\n########## Checking for NULL sessions ##########"
-output=`bash -c "echo 'srvinfo' | rpcclient $IP -U%"`
+output=$(bash -c "echo 'srvinfo' | rpcclient $IP -U%")
 echo $output
 
 echo -e "\n########## Enumerating domains ##########"

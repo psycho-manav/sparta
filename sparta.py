@@ -19,7 +19,7 @@ except ImportError as e:
     print("[-] Import failed. SQLAlchemy library not found. \nTry installing it with: apt install python3-sqlalchemy")
     print(e)
     exit(1)
-    
+
 try:
     from PyQt5 import QtGui, QtCore, QtWidgets
 except ImportError as e:
@@ -35,47 +35,55 @@ from ui.view import View
 from controller.controller import Controller
 
 # this class is used to catch events such as arrow key presses or close window (X)
+
+
 class MyEventFilter(QtCore.QObject):
-    
+
     def eventFilter(self, receiver, event):
         # catch up/down arrow key presses in hoststable
-        #if(event.type() == QtCore.QEvent.KeyPress and (receiver == view.ui.HostsTableView or receiver == view.ui.ServiceNamesTableView or receiver == view.ui.ToolsTableView or receiver == view.ui.ToolHostsTableView or receiver == view.ui.ScriptsTableView or receiver == view.ui.ServicesTableView or receiver == view.settingsWidget.toolForHostsTableWidget or receiver == view.settingsWidget.toolForServiceTableWidget or receiver == view.settingsWidget.toolForTerminalTableWidget)):
-        if(event.type() == QtCore.QEvent.KeyPress and (receiver == view.ui.HostsTableView or receiver == view.ui.ServiceNamesTableView or receiver == view.ui.ToolsTableView or receiver == view.ui.ToolHostsTableView or receiver == view.ui.ScriptsTableView or receiver == view.ui.ServicesTableView)):
+        # if(event.type() == QtCore.QEvent.KeyPress and (receiver == view.ui.HostsTableView or receiver == view.ui.ServiceNamesTableView or receiver == view.ui.ToolsTableView or receiver == view.ui.ToolHostsTableView or receiver == view.ui.ScriptsTableView or receiver == view.ui.ServicesTableView or receiver == view.settingsWidget.toolForHostsTableWidget or receiver == view.settingsWidget.toolForServiceTableWidget or receiver == view.settingsWidget.toolForTerminalTableWidget)):
+        if (event.type() == QtCore.QEvent.KeyPress and (receiver == view.ui.HostsTableView or receiver == view.ui.ServiceNamesTableView or receiver == view.ui.ToolsTableView or receiver == view.ui.ToolHostsTableView or receiver == view.ui.ScriptsTableView or receiver == view.ui.ServicesTableView)):
             key = event.key()
             if not receiver.selectionModel().selectedRows():
                 return True
             index = receiver.selectionModel().selectedRows()[0].row()
-            
-            if key == QtCore.Qt.Key_Down: 
+
+            if key == QtCore.Qt.Key_Down:
                 newindex = index + 1
                 receiver.selectRow(newindex)
-                receiver.clicked.emit(receiver.selectionModel().selectedRows()[0])
+                receiver.clicked.emit(
+                    receiver.selectionModel().selectedRows()[0])
 
             elif key == QtCore.Qt.Key_Up:
                 newindex = index - 1
                 receiver.selectRow(newindex)
-                receiver.clicked.emit(receiver.selectionModel().selectedRows()[0])
+                receiver.clicked.emit(
+                    receiver.selectionModel().selectedRows()[0])
 
-            elif QtWidgets.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier and key == QtCore.Qt.Key_C:    
+            elif QtWidgets.QApplication.keyboardModifiers() == QtCore.Qt.ControlModifier and key == QtCore.Qt.Key_C:
                 selected = receiver.selectionModel().currentIndex()
                 clipboard = QtWidgets.QApplication.clipboard()
                 clipboard.setText(selected.data().toString())
 
             return True
-            
-        elif(event.type() == QtCore.QEvent.Close and receiver == MainWindow):
+
+        elif (event.type() == QtCore.QEvent.Close and receiver == MainWindow):
             event.ignore()
             view.appExit()
             return True
-            
-        else:      
-            return super(MyEventFilter,self).eventFilter(receiver, event)    # normal event processing
+
+        else:
+            # normal event processing
+            return super(MyEventFilter, self).eventFilter(receiver, event)
+
 
 if __name__ == "__main__":
     # Parse arguments and kick off scans if needed
     parser = argparse.ArgumentParser()
-    parser.add_argument("-t", "--target", help="Automatically launch a staged nmap against the target IP range")
-    parser.add_argument("-f", "--file", help="Import nmap XML file and kick off automated attacks")
+    parser.add_argument(
+        "-t", "--target", help="Automatically launch a staged nmap against the target IP range")
+    parser.add_argument(
+        "-f", "--file", help="Import nmap XML file and kick off automated attacks")
     args = parser.parse_args()
 
     app = QtWidgets.QApplication(sys.argv)
@@ -87,25 +95,27 @@ if __name__ == "__main__":
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
 
-    try:    
+    try:
         qss_file = open('./ui/sparta.qss').read()
     except IOError as e:
         print("[-] The sparta.qss file is missing. Your installation seems to be corrupted. Try downloading the latest version.")
         exit(0)
 
     MainWindow.setStyleSheet(qss_file)
-    logic = Logic()                                    # Model prep (logic, db and models)
+    # Model prep (logic, db and models)
+    logic = Logic()
     view = View(ui, MainWindow)                        # View prep (gui)
-    controller = Controller(view, logic)            # Controller prep (communication between model and view)
+    # Controller prep (communication between model and view)
+    controller = Controller(view, logic)
 
     MainWindow.show()
-    
+
     if args.target:
         print("[+] Target was specified.")
         controller.addHosts(args.target, True, True)
 
     if args.file:
         print("[+] Nmap XML file was provided.")
-        controller.importNmap(args.file)        
+        controller.importNmap(args.file)
 
     sys.exit(app.exec_())
